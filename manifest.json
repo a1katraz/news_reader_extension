@@ -1,6 +1,6 @@
 {
-  "name": "Save Open Tabs",
-  "description": "An extension to save all your tabs in a file. Declutter your Chrome without losing work.",
+  "name": "News Reader App",
+  "description": "An extension to read relevant news from RSS feeds.",
   "version": "1.0",
   "manifest_version": 3,
   "action": {

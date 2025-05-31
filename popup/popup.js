@@ -1,62 +1,67 @@
-const tabs = await chrome.tabs.query({
-    url: [
-      "https://*/*"
-    ]
-  });
-
-const collator = new Intl.Collator();
-tabs.sort((a, b) => collator.compare(a.title, b.title));
-  
 const template = document.getElementById("li_template");
 const elements = new Set();
 
-for (const tab of tabs) {
-    const element = template.content.firstElementChild.cloneNode(true);
-  
-    //const title = tab.title.split("-")[0].trim();
-    //const pathname = new URL(tab.url).pathname.slice("/docs".length);
-  
-    const title = tab.title;
-    const pathname = tab.url;
+const Marketsbutton = document.getElementById("Markets");
+const Moneybutton = document.getElementById("Money");
+const Recosbutton = document.getElementById("Recos");
 
-    element.querySelector(".title").textContent = title;
-    element.querySelector(".pathname").textContent = pathname;
-    element.querySelector("a").addEventListener("click", async () => {
-      // need to focus window as well as the active tab
-      await chrome.tabs.update(tab.id, { active: true });
-      await chrome.windows.update(tab.windowId, { focused: true });
-    });
-  
-    elements.add(element);
-  }
+const message = document.getElementById("statusMessage");
 
-document.querySelector("ul").append(...elements);
+Marketsbutton.addEventListener("click", openRssLink.bind(null, 'https://www.livemint.com/rss/markets'));  
+Moneybutton.addEventListener('click', openRssLink.bind(null, 'https://www.livemint.com/rss/money'));
+Recosbutton.addEventListener('click', cleanRecommendations.bind(null));
 
-const button = document.querySelector("button");
-button.addEventListener("click", async () => {
-  let idx = 1;
-  let tab_names = "";
-  for (const tab of tabs){
-    tab_names +=  idx + ": " + tab.url + "\r\n";
-    //console.log(idx + ": " +tab.url);
-    idx += 1;
-  }
-  
-  const fileHandle = await window.showSaveFilePicker();
-  writeFile(fileHandle, tab_names);
+function openRssLink(url) { 
+    if (elements.size > 0) {
+        document.querySelector("ul").innerHTML = ''; // Clear previous elements
+        elements.clear(); // Clear the Set to avoid duplicates
+    }
 
-  const message = document.getElementById("successMessage");
-  message.textContent = "Tabs addresses written to file.";
+    message.textContent = "Loading..."; // Show loading message
 
-  //const tabIds = tabs.map(({ id }) => id);
-  //if (tabIds.length) {
-  //  const group = await chrome.tabs.group({ tabIds });
-  //  await chrome.tabGroups.update(group, { title: "DOCS" });
-  //}
-});
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+      })
+      .then(xmlText => {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+      const items = xmlDoc.getElementsByTagName('item');
+      
+      for (let i = 0; i < items.length; i++) {
+          const title = items[i].getElementsByTagName('title')[0].textContent;
+          const link = items[i].getElementsByTagName('link')[0].textContent;
+          //console.log(title, link);
+          
+          const element = template.content.firstElementChild.cloneNode(true);
+          element.querySelector(".title").textContent = title;
+          element.querySelector(".pathname").textContent = link;
+          
+          elements.add(element);
+        }
 
-async function writeFile(fileHandle, content) {
-  const writable = await fileHandle.createWritable();
-  await writable.write(content);
-  await writable.close();
+      message.textContent = "";
+      document.querySelector("ul").append(...elements);
+      })
+      .catch(error => {
+            console.error('Error fetching or parsing RSS feed:', error);
+      });
+}
+
+function cleanRecommendations(url) {
+    if (elements.size > 0) {
+        document.querySelector("ul").innerHTML = ''; // Clear previous elements
+        elements.clear(); // Clear the Set to avoid duplicates
+        message.textContent = "Getting Recommendation Links"; // Show loading message
+        //Making it intelligent here is too tough.
+        // Now I need to setupo Firebase or npm.
+        return;
+    }
+    else {  
+        message.textContent = "No Recommendations to clean"; // Show no recommendations message
+        return;
+    }    
 }
