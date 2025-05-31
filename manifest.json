@@ -1,0 +1,14 @@
+{
+  "name": "Save Open Tabs",
+  "description": "An extension to save all your tabs in a file. Declutter your Chrome without losing work.",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "main.html",
+    "default_icon": "images/extension_icon.png"
+  },  
+  "host_permissions": [
+      "https://*/*"
+    ]
+
+}
